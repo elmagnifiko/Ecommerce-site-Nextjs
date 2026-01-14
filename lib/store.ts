@@ -19,7 +19,7 @@ interface CartItem {
   id: number;
   product_id: number;
   quantity: number;
-  product: any;
+  product: string;
 }
 
 interface CartState {

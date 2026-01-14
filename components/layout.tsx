@@ -5,8 +5,13 @@ import { useAuthStore, useCartStore } from '@/lib/store';
 import { authAPI } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { ReactNode } from 'react';
 
-export default function Layout({ children }) {
+interface LayoutProps {
+  children: ReactNode;
+}
+
+export default function Layout({ children }: LayoutProps) {
   const { isAuthenticated, user, logout } = useAuthStore();
   const { count } = useCartStore();
   const router = useRouter();
