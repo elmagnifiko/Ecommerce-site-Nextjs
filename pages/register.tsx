@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import api, { setAuthToken } from "../lib/api";
 
-interface LoginResponse {
+interface RegisterResponse {
   data?: {
     token?: string;
   };
@@ -19,19 +19,30 @@ interface ApiError {
   message?: string;
 }
 
-export default function Login() {
+export default function Register() {
+  const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleLogin = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleRegister = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
-    if (!email || !password) {
-      const msg = "Please enter both email and password.";
-      setError(msg);
+    if (!name || !email || !password || !confirmPassword) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
       return;
     }
 
@@ -39,22 +50,24 @@ export default function Login() {
     setError(null);
 
     try {
-      const res = await api.post<LoginResponse>("/login", { email, password });
+      const res = await api.post<RegisterResponse>("/register", { 
+        name, 
+        email, 
+        password 
+      });
+      
       const token = res.data?.data?.token || res.data?.token;
 
-      if (!token) {
-        const msg = "Login succeeded but token is missing in the response.";
-        setError(msg);
-        setIsLoading(false);
-        return;
+      if (token) {
+        setAuthToken(token);
+        await router.push("/");
+      } else {
+        await router.push("/login");
       }
-
-      setAuthToken(token);
-      await router.push("/");
     } catch (err) {
       console.error(err);
       const apiError = err as ApiError;
-      const message = apiError?.response?.data?.message || apiError?.message || "Login failed";
+      const message = apiError?.response?.data?.message || apiError?.message || "Registration failed";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -64,10 +77,25 @@ export default function Login() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Welcome Back</h1>
-        <p style={styles.subtitle}>Sign in to your account</p>
+        <h1 style={styles.title}>Create Account</h1>
+        <p style={styles.subtitle}>Join us today</p>
 
-        <form onSubmit={handleLogin} style={styles.form}>
+        <form onSubmit={handleRegister} style={styles.form}>
+          <div style={styles.inputGroup}>
+            <label htmlFor="name" style={styles.label}>
+              Full Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              required
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+              style={styles.input}
+            />
+          </div>
+
           <div style={styles.inputGroup}>
             <label htmlFor="email" style={styles.label}>
               Email Address
@@ -98,6 +126,21 @@ export default function Login() {
             />
           </div>
 
+          <div style={styles.inputGroup}>
+            <label htmlFor="confirmPassword" style={styles.label}>
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              required
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+              style={styles.input}
+            />
+          </div>
+
           {error && <div style={styles.error}>{error}</div>}
 
           <button 
@@ -108,15 +151,15 @@ export default function Login() {
               ...(isLoading ? styles.buttonDisabled : {}),
             }}
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? "Creating account..." : "Sign Up"}
           </button>
         </form>
 
         <div style={styles.footer}>
           <p style={styles.footerText}>
-            Don&apos;t have an account?{" "}
-            <Link href="/register" style={styles.link}>
-              Sign up
+            Already have an account?{" "}
+            <Link href="/login" style={styles.link}>
+              Sign in
             </Link>
           </p>
         </div>
