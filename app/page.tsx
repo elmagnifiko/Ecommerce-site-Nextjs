@@ -26,6 +26,25 @@ export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const API_BASE_URL = "http://127.0.0.1:8080";
+
+  const getImageUrl = (imagePath: string | null | undefined): string => {
+    if (!imagePath) {
+      return "https://via.placeholder.com/300x200?text=Produit";
+    }
+    
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    let cleanPath = imagePath.trim();
+    while (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
+    
+    return `${API_BASE_URL}/${cleanPath}`;
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -116,9 +135,12 @@ export default function Home() {
                 <div className="h-48 bg-gray-200 flex items-center justify-center">
                   {product.image ? (
                     <img
-                      src={product.image}
+                      src={getImageUrl(product.image)}
                       alt={product.name}
                       className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://via.placeholder.com/300x200?text=Produit";
+                      }}
                     />
                   ) : (
                     <span className="text-6xl">📦</span>
